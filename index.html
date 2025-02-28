@@ -1,21 +1,18 @@
-<!-- © SinC@interia.pl 2025 -->
 <!DOCTYPE html>
 <html lang="pl">
-
 <head>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SinC&AI WEB Radio Player</title>
+    <title>SinC AI Radio Player</title>
     <style>
-
         body {
-        background-image: url('tuner.png');
-        background-color: #cccccc;
-        background-repeat: no-repeat;
-        background-size: 600px 600px;
-        background-position: center 45px;
-        border-radius: 5px;
+            background-image: url('tuner.png');
+            background-color: #000;
+            background-repeat: no-repeat;
+            background-size: 600px 600px;
+            background-position: center 45px;
+            border-radius: 5px;
         }
         
         .radio-container {
@@ -47,28 +44,46 @@
             background: #f0f0f0;
             border-radius: 10px;
             font-family: Arial, Helvetica, sans-serif;
+font-size: 20px;
         }
         
         .radio-buttons {
             display: none;
         }
+
+        #clock {
+            position: absolute;
+            top: 45px;
+            left: calc(50% - 260px);
+            background: rgba(240, 240, 240, 0);
+            padding: 10px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+            font-size: 30px;
+            font-weight: bold;
+            color: #333;
+            z-index: 1000;
+            min-width: 80px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
+    <div id="clock"></div>
+
     <div class="radio-container">
-        <h1>SinC AI WEB Radio</h1>
+        <h1>SinC WEB Radio</h1>
         
         <div class="tuner-control" id="tuner">
             <img src="pokretlo.png" alt="Radio Tuner" class="tuner-dial" id="tunerDial">
         </div>
         
         <div class="radio-display" id="nowPlaying">
-            Teraz odtwarzane: <span id="currentStation">-</span>
+            Teraz odtwarzane: <strong><span id="currentStation">-</strong></span>
             <audio id="audioPlayer" controls></audio>
         </div>
 
         <div class="radio-buttons" id="stations">
-            <!-- Lista stacji w kolejności -->
             <button class="radio-button" data-url="https://radiostream.pl/tuba10-1.mp3">Tok FM</button>
             <button class="radio-button" data-url="https://stream15.polskieradio.pl/pr24/pr24.sdp/playlist.m3u8">PR 24</button>
             <button class="radio-button" data-url="https://stream14.polskieradio.pl/pr4/pr4.sdp/playlist.m3u8">PR 4</button>
@@ -89,147 +104,147 @@
             <button class="radio-button" data-url="https://radiostream.pl/tuba8904-1.mp3">Złote przeboje</button>
             <button class="radio-button" data-url="https://rs9-krk2-cyfronet.rmfstream.pl/RMFMAXXX48">RMF Maxxx</button>
             <button class="radio-button" data-url="https://zt02.cdn.eurozet.pl/zet-old.mp3?redirected=02">Radio Zet</button>
-
         </div>
     </div>
 
-	<script>
-
-const audioPlayer = document.getElementById('audioPlayer');
-const nowPlaying = document.getElementById('nowPlaying');
-const currentStation = document.getElementById('currentStation');
-const buttons = document.querySelectorAll('.radio-button');
-const tuner = document.getElementById('tuner');
-const tunerDial = document.getElementById('tunerDial');
-let currentPlayingButton = null;
-let hls = null;
-let isDragging = false;
-let startAngle = 0;
-let currentRotation = 0;
-let currentStationIndex = -1;
-let lastMouseAngle = 0;
-const STEP_ANGLE = 18; // 360 degrees / 20 stations = 18 degrees per step
-
-function getAngle(event, element) {
-    const rect = element.getBoundingClientRect();
-    const center = {
-        x: rect.left + rect.width / 2,
-        y: rect.top + rect.height / 2
-    };
-    const clientX = event.touches ? event.touches[0].clientX : event.clientX;
-    const clientY = event.touches ? event.touches[0].clientY : event.clientY;
-    const angle = Math.atan2(clientY - center.y, clientX - center.x) * 180 / Math.PI;
-    return (angle + 360) % 360; // Normalize to 0-360
-}
-
-function roundToStep(rotation) {
-    return Math.round(rotation / STEP_ANGLE) * STEP_ANGLE;
-}
-
-function playStation(index) {
-    if (index < 0 || index >= buttons.length) return;
-    
-    const button = buttons[index];
-    const url = button.dataset.url;
-    const stationName = button.textContent;
-
-    if (currentPlayingButton === button) return;
-
-    // Stop previous if playing
-    if (currentPlayingButton) {
-        currentPlayingButton.classList.remove('playing');
-        if (hls) {
-            hls.destroy();
-            hls = null;
+    <script>
+        // Updated clock functionality - time only
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
         }
-    }
 
-    // Start playing new station
-    if (url.endsWith('.m3u8')) {
-        if (Hls.isSupported()) {
-            hls = new Hls();
-            hls.loadSource(url);
-            hls.attachMedia(audioPlayer);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // Radio player functionality
+        const audioPlayer = document.getElementById('audioPlayer');
+        const nowPlaying = document.getElementById('nowPlaying');
+        const currentStation = document.getElementById('currentStation');
+        const buttons = document.querySelectorAll('.radio-button');
+        const tuner = document.getElementById('tuner');
+        const tunerDial = document.getElementById('tunerDial');
+        let currentPlayingButton = null;
+        let hls = null;
+        let isDragging = false;
+        let startAngle = 0;
+        let currentRotation = 0;
+        let currentStationIndex = -1;
+        let lastMouseAngle = 0;
+        const STEP_ANGLE = 18;
+
+        function getAngle(event, element) {
+            const rect = element.getBoundingClientRect();
+            const center = {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2
+            };
+            const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+            const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+            const angle = Math.atan2(clientY - center.y, clientX - center.x) * 180 / Math.PI;
+            return (angle + 360) % 360;
+        }
+
+        function roundToStep(rotation) {
+            return Math.round(rotation / STEP_ANGLE) * STEP_ANGLE;
+        }
+
+        function playStation(index) {
+            if (index < 0 || index >= buttons.length) return;
+            
+            const button = buttons[index];
+            const url = button.dataset.url;
+            const stationName = button.textContent;
+
+            if (currentPlayingButton === button) return;
+
+            if (currentPlayingButton) {
+                currentPlayingButton.classList.remove('playing');
+                if (hls) {
+                    hls.destroy();
+                    hls = null;
+                }
+            }
+
+            if (url.endsWith('.m3u8')) {
+                if (Hls.isSupported()) {
+                    hls = new Hls();
+                    hls.loadSource(url);
+                    hls.attachMedia(audioPlayer);
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                        audioPlayer.play();
+                    });
+                } else if (audioPlayer.canPlayType('application/vnd.apple.mpegurl')) {
+                    audioPlayer.src = url;
+                    audioPlayer.play();
+                }
+            } else {
+                audioPlayer.src = url;
                 audioPlayer.play();
-            });
-        } else if (audioPlayer.canPlayType('application/vnd.apple.mpegurl')) {
-            audioPlayer.src = url;
-            audioPlayer.play();
+            }
+
+            nowPlaying.style.display = 'block';
+            currentStation.textContent = stationName;
+            button.classList.add('playing');
+            currentPlayingButton = button;
+            currentStationIndex = index;
         }
-    } else {
-        audioPlayer.src = url;
-        audioPlayer.play();
-    }
 
-    nowPlaying.style.display = 'block';
-    currentStation.textContent = stationName;
-    button.classList.add('playing');
-    currentPlayingButton = button;
-    currentStationIndex = index;
-}
+        function handleStart(event) {
+            isDragging = true;
+            lastMouseAngle = getAngle(event, tunerDial);
+            startAngle = lastMouseAngle - currentRotation;
+        }
 
-function handleStart(event) {
-    isDragging = true;
-    lastMouseAngle = getAngle(event, tunerDial);
-    startAngle = lastMouseAngle - currentRotation;
-}
+        function handleMove(event) {
+            if (!isDragging) return;
 
-function handleMove(event) {
-    if (!isDragging) return;
+            const currentAngle = getAngle(event, tunerDial);
+            let angleDiff = currentAngle - lastMouseAngle;
+            
+            if (angleDiff > 180) angleDiff -= 360;
+            if (angleDiff < -180) angleDiff += 360;
+            
+            currentRotation = (currentRotation + angleDiff + 360) % 360;
+            lastMouseAngle = currentAngle;
 
-    const currentAngle = getAngle(event, tunerDial);
-    let angleDiff = currentAngle - lastMouseAngle;
-    
-    // Handle angle wrap-around
-    if (angleDiff > 180) angleDiff -= 360;
-    if (angleDiff < -180) angleDiff += 360;
-    
-    currentRotation = (currentRotation + angleDiff + 360) % 360;
-    lastMouseAngle = currentAngle;
+            const steppedRotation = roundToStep(currentRotation);
+            tunerDial.style.transform = `rotate(${steppedRotation}deg)`;
+            
+            const newIndex = Math.floor(steppedRotation / STEP_ANGLE);
+            
+            if (newIndex !== currentStationIndex && newIndex >= 0 && newIndex < buttons.length) {
+                playStation(newIndex);
+            }
+        }
 
-    // Round to nearest step
-    const steppedRotation = roundToStep(currentRotation);
-    
-    // Update dial rotation
-    tunerDial.style.transform = `rotate(${steppedRotation}deg)`;
-    
-    // Calculate station index based on rotation
-    const newIndex = Math.floor(steppedRotation / STEP_ANGLE);
-    
-    if (newIndex !== currentStationIndex && newIndex >= 0 && newIndex < buttons.length) {
-        playStation(newIndex);
-    }
-}
+        function handleEnd() {
+            isDragging = false;
+        }
 
-function handleEnd() {
-    isDragging = false;
-}
+        tuner.addEventListener('mousedown', handleStart);
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('mouseup', handleEnd);
 
-// Add mouse events
-tuner.addEventListener('mousedown', handleStart);
-document.addEventListener('mousemove', handleMove);
-document.addEventListener('mouseup', handleEnd);
+        tuner.addEventListener('touchstart', handleStart);
+        document.addEventListener('touchmove', handleMove);
+        document.addEventListener('touchend', handleEnd);
 
-// Add touch events
-tuner.addEventListener('touchstart', handleStart);
-document.addEventListener('touchmove', handleMove);
-document.addEventListener('touchend', handleEnd);
+        audioPlayer.addEventListener('error', () => {
+            alert('Błąd odtwarzania stacji. Sprawdź połączenie internetowe lub spróbuj później.');
+            if (currentPlayingButton) {
+                currentPlayingButton.classList.remove('playing');
+                currentPlayingButton = null;
+            }
+            nowPlaying.style.display = 'none';
+        });
 
-audioPlayer.addEventListener('error', () => {
-    alert('Błąd odtwarzania stacji. Sprawdź połączenie internetowe lub spróbuj później.');
-    if (currentPlayingButton) {
-        currentPlayingButton.classList.remove('playing');
-        currentPlayingButton = null;
-    }
-    nowPlaying.style.display = 'none';
-});
-
-// Auto-play Tok FM on page load
-window.addEventListener('load', () => {
-    playStation(0); // Tok FM jest teraz na indeksie 0
-});
-
+        window.addEventListener('load', () => {
+            playStation(0);
+        });
     </script>
 </body>
 </html>
