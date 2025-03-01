@@ -36,17 +36,19 @@ git clone https://github.com/yourusername/SinC-AI-WEB-Radio-Player.git
 2. Ensure you have the required assets in your project directory:
    - `tuner.png` (background image)
    - `pokretlo.png` (dial image)
+   - `play.png` (play button)
+   - `stop.png` (play button in stop position)
 
 3. Open `index.html` in a web browser
 
 ## Usage
 
-1. The radio will automatically start playing the first station (Tok FM)
+1. The radio will automatically start playing the first station (Tok FM) when You press PLAY button
 2. Rotate the tuning dial by clicking and dragging:
    - Clockwise to move up the station list
    - Counter-clockwise to move down the station list
 3. The current station name will be displayed in the radio display
-4. Use the audio controls to adjust volume and pause/play
+4. Use the audio controls to adjust volume
 
 ## Supported Stations
 
