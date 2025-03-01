@@ -13,17 +13,17 @@
             background-size: 600px 600px;
             background-position: center 45px;
             border-radius: 5px;
+			font-family: Arial, sans-serif;
         }
         
-        .radio-container {
+		.radio-container {
             text-align: center;
             padding: 20px;
         }
-        
         .tuner-control {
             width: 200px;
             height: 200px;
-            margin: 180px auto 100px auto;
+            margin: 182px auto 100px auto;
             position: relative;
             cursor: pointer;
         }
@@ -33,32 +33,18 @@
             height: 100%;
             transition: transform 0.1s ease;
         }
-        
-        .radio-display {
-            width: 590px;           
-            position: absolute;     
-            top: 50px;          
-            left: 50%;            
-            transform: translateX(-50%);
-            margin: 0;            
-            background: #f0f0f0;
-            border-radius: 10px;
-            font-family: Arial, Helvetica, sans-serif;
-            font-size: 16px;
-        }
-        
+             
         .radio-buttons {
             display: none;
         }
 
         #clock {
             position: absolute;
-            top: 45px;
-            left: calc(50% - 260px);
+            top: 155px;
+            left: calc(50% - 190px);
             background: rgba(240, 240, 240, 0);
             padding: 10px;
             border-radius: 5px;
-            font-family: Arial, sans-serif;
             font-size: 30px;
             font-weight: bold;
             color: #333;
@@ -66,6 +52,81 @@
             min-width: 80px;
             text-align: center;
         }
+        
+		.custom-controls {
+			display: flex;
+			align-items: center;
+			gap: 15px;
+		}
+
+		.play-pause-btn {
+			position: absolute;
+			top: 446px;
+			left: calc(50% - 230px);
+			background: transparent;
+			border: none;
+			cursor: pointer;
+			z-index: 100;   
+		}
+
+		.play-pause-btn img {
+			width: 86%;
+			height: 86%;
+		}
+				
+		.station-info {
+			position: absolute;
+			top: 215px;
+			left: calc(50% - 107px);
+			font-size: 16px;
+			color: #fcf7e8;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			opacity: 0.5; 
+			z-index: 100;
+		}
+				
+		.volume-control {
+			position: absolute;
+			top: 450px;
+			left: calc(50% + 184px);
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			z-index: 100;
+		}
+
+		.volume-control input[type="range"] {
+			-webkit-appearance: slider-vertical;
+			writing-mode: bt-lr;
+			width: 2px; /* Szerokość suwaka */
+			height: 54px;
+			transform: rotate(0);
+		}
+
+		.volume-control input[type="range"]::-webkit-slider-thumb {
+			-webkit-appearance: none;
+			background: lightgray; /* Kolor suwaka */
+			cursor: pointer;
+		}
+
+		.volume-control input[type="range"]::-moz-range-thumb {
+			background: lightgray; /* Kolor suwaka */
+			cursor: pointer;
+		}
+
+		.volume-control input[type="range"]::-webkit-slider-runnable-track {
+			background: lightgray; /* Kolor samego suwaka */
+			width: 2px; /* Szerokość samego suwaka */
+		}
+
+		.volume-control input[type="range"]::-moz-range-track {
+			background: lightgray; /* Kolor samego suwaka */
+			width: 2px; /* Szerokość samego suwaka */
+		}
+
+
     </style>
 </head>
 <body>
@@ -79,8 +140,21 @@
         </div>
         
         <div class="radio-display" id="nowPlaying">
-            Teraz odtwarzane: <strong><span id="currentStation">-</strong></span>
-            <audio id="audioPlayer" controls></audio>
+            <div class="station-info">
+                Teraz odtwarzane: <strong><span id="currentStation">-</span></strong>
+            </div>
+            
+            <div class="custom-controls">
+                <button class="play-pause-btn" id="playPauseBtn">
+                    <img src="play.png" alt="Play" id="playPauseImg">
+                </button>
+                <div class="volume-control">
+
+                    <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1">
+                </div>
+            </div>
+            
+            <audio id="audioPlayer"></audio>
         </div>
 
         <div class="radio-buttons" id="stations">
@@ -127,6 +201,10 @@
         const buttons = document.querySelectorAll('.radio-button');
         const tuner = document.getElementById('tuner');
         const tunerDial = document.getElementById('tunerDial');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const playPauseImg = document.getElementById('playPauseImg');
+        const volumeSlider = document.getElementById('volumeSlider');
+        
         let currentPlayingButton = null;
         let hls = null;
         let isDragging = false;
@@ -135,6 +213,35 @@
         let currentStationIndex = -1;
         let lastMouseAngle = 0;
         const STEP_ANGLE = 18;
+
+        // Obsługa przycisku play/pause
+        playPauseBtn.addEventListener('click', function() {
+            if (audioPlayer.paused) {
+                audioPlayer.play();
+                playPauseImg.src = 'pause.png'; // Zmiana na ikonę pauzy
+                playPauseImg.alt = 'Pause';
+            } else {
+                audioPlayer.pause();
+                playPauseImg.src = 'play.png'; // Zmiana na ikonę play
+                playPauseImg.alt = 'Play';
+            }
+        });
+
+        // Obsługa suwaka głośności
+        volumeSlider.addEventListener('input', function() {
+            audioPlayer.volume = this.value;
+        });
+
+        // Obsługa play/pause na podstawie stanu odtwarzacza
+        audioPlayer.addEventListener('play', function() {
+            playPauseImg.src = 'pause.png';
+            playPauseImg.alt = 'Pause';
+        });
+
+        audioPlayer.addEventListener('pause', function() {
+            playPauseImg.src = 'play.png';
+            playPauseImg.alt = 'Play';
+        });
 
         function getAngle(event, element) {
             const rect = element.getBoundingClientRect();
