@@ -13,17 +13,17 @@
             background-size: 600px 600px;
             background-position: center 45px;
             border-radius: 5px;
-			font-family: Arial, sans-serif;
+	    font-family: Arial, sans-serif;
         }
         
-		.radio-container {
+	    .radio-container {
             text-align: center;
             padding: 20px;
         }
         .tuner-control {
             width: 200px;
             height: 200px;
-            margin: 182px auto 100px auto;
+            margin: 180px auto 100px auto;
             position: relative;
             cursor: pointer;
         }
@@ -51,7 +51,7 @@
             z-index: 1000;
             min-width: 80px;
             text-align: center;
-			opacity: 0.7;
+	    opacity: 0.7;
         }
         
 		.custom-controls {
@@ -80,12 +80,18 @@
 			top: 213px;
 			left: calc(50% - 107px);
 			font-size: 16px;
-			color: #fcf7e8;
+			color: #000;
 			display: flex;
 			align-items: center;
 			justify-content: space-between;
-			opacity: 0.5; 
+			opacity: 0.1; 
 			z-index: 100;
+			transition: color 0.3s ease; /* Dodana płynna zmiana koloru */
+		}
+
+		.station-info.playing {
+			color: #FFA500; /* Kolor pomarańczowy */
+			opacity: 0.8;
 		}
 				
 		.volume-control {
@@ -96,35 +102,32 @@
 
 		.volume-control input[type="range"] {
 			-webkit-appearance: slider-vertical;
-			width: 0px; /* Szerokość suwaka */
+			width: 0px; 
 			height: 54px;
 			transform: rotate(0);
 		}
 
 		.volume-control input[type="range"]::-webkit-slider-thumb {
-			background: lightgray; /* Kolor suwaka */
+			background: lightgray;
 			cursor: pointer;
 			accent-color: white;
 			border: none;
 		}
 
 		.volume-control input[type="range"]::-moz-range-thumb {
-			background: lightgray; /* Kolor suwaka */
+			background: lightgray;
 			cursor: pointer;
 		}
 
 		.volume-control input[type="range"]::-webkit-slider-runnable-track {
-			background: lightgray; /* Kolor samego suwaka */
-			width: 0px; /* Szerokość samego suwaka */
-
+			background: lightgray;
+			width: 0px;
 		}
 
 		.volume-control input[type="range"]::-moz-range-track {
-			background: lightgray; /* Kolor samego suwaka */
-			width: 0px; /* Szerokość samego suwaka */
+			background: lightgray;
+			width: 0px;
 		}
-
-
     </style>
 </head>
 <body>
@@ -138,7 +141,7 @@
         </div>
         
         <div class="radio-display" id="nowPlaying">
-            <div class="station-info">
+            <div class="station-info" id="stationInfo">
                 Teraz odtwarzane:&nbsp;&nbsp;<strong><span id="currentStation">-</span></strong>
             </div>
             
@@ -147,7 +150,6 @@
                     <img src="play.png" alt="Play" id="playPauseImg">
                 </button>
                 <div class="volume-control">
-
                     <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1">
                 </div>
             </div>
@@ -213,18 +215,23 @@
         const STEP_ANGLE = 18;
 
         // Obsługa przycisku play/pause
-        playPauseBtn.addEventListener('click', function() {
-            if (audioPlayer.paused) {
-                audioPlayer.play();
-                playPauseImg.src = 'pause.png'; // Zmiana na ikonę pauzy
-                playPauseImg.alt = 'Pause';
-            } else {
-                audioPlayer.pause();
-                playPauseImg.src = 'play.png'; // Zmiana na ikonę play
-                playPauseImg.alt = 'Play';
-            }
-        });
-
+    playPauseBtn.addEventListener('click', function() {
+        const stationInfo = document.getElementById('stationInfo');
+        
+        if (audioPlayer.paused) {
+            audioPlayer.play();
+            playPauseImg.src = 'pause.png';
+            playPauseImg.alt = 'Pause';
+            // Dodanie klasy zmieniającej kolor
+            stationInfo.classList.add('playing');
+        } else {
+            audioPlayer.pause();
+            playPauseImg.src = 'play.png';
+            playPauseImg.alt = 'Play';
+            // Usunięcie klasy zmieniającej kolor
+            stationInfo.classList.remove('playing');
+        }
+    });
         // Obsługa suwaka głośności
         volumeSlider.addEventListener('input', function() {
             audioPlayer.volume = this.value;
@@ -263,6 +270,7 @@
             const button = buttons[index];
             const url = button.dataset.url;
             const stationName = button.textContent;
+            const stationInfo = document.getElementById('stationInfo');
 
             if (currentPlayingButton === button) return;
 
@@ -272,6 +280,8 @@
                     hls.destroy();
                     hls = null;
                 }
+                // Usuwanie klasy 'playing' z station-info
+                stationInfo.classList.remove('playing');
             }
 
             if (url.endsWith('.m3u8')) {
@@ -294,6 +304,8 @@
             nowPlaying.style.display = 'block';
             currentStation.textContent = stationName;
             button.classList.add('playing');
+            // Dodawanie klasy 'playing' do station-info
+            stationInfo.classList.add('playing');
             currentPlayingButton = button;
             currentStationIndex = index;
         }
@@ -347,9 +359,20 @@
             nowPlaying.style.display = 'none';
         });
 
-        window.addEventListener('load', () => {
-            playStation(0);
-        });
+
+
+    window.addEventListener('load', () => {
+        playStation(0);
+        // Natychmiast wstrzymaj odtwarzanie po załadowaniu stacji
+        audioPlayer.pause();
+        playPauseImg.src = 'play.png';
+        playPauseImg.alt = 'Play';
+        const stationInfo = document.getElementById('stationInfo');
+        stationInfo.classList.remove('playing');
+    });
+
     </script>
 </body>
 </html>
+
+
